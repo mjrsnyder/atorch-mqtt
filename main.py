@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+from datetime import timedelta
 import paho.mqtt.client as mqtt
 from bleak import BleakClient
 
@@ -55,6 +56,8 @@ class BLEPowerMeter:
     # TODO: add a logger and make this a debug log
     print(self._packet.hex())
 
+    # ff550102000084000077000c0a00ff002c00000a000000000015000000000a000000002c
+
     # TODO: make this an object or something?
     metrics = {
       "voltage" : int.from_bytes(self._packet[4:7], 'big', signed=False) / 10.0,
@@ -62,8 +65,13 @@ class BLEPowerMeter:
       "amp_hours" : int.from_bytes(self._packet[10:13], 'big', signed=False) / 100.0,
       "kw_hours" : int.from_bytes(self._packet[13:17], 'big', signed=False) / 100.0,
       "cost" : int.from_bytes(self._packet[17:20], 'big', signed=False) / 100.0,
-      # TODO: finish pulling the data from the packet
-      "temp" :  int.from_bytes(self._packet[20:22], 'big', signed=False) # This is wrong...
+      "temp" :  int.from_bytes(self._packet[24:26], 'big', signed=False),
+      "duration" :  timedelta(
+          hours=int.from_bytes(self._packet[26:28], 'big', signed=False),
+          minutes=int.from_bytes(self._packet[28:29], 'big', signed=False),
+          seconds = int.from_bytes(self._packet[29:30], 'big', signed=False)
+        ).total_seconds(),
+      "backlight" :  int.from_bytes(self._packet[30:31], 'big', signed=False)
     }
     self._callback(metrics)
 
